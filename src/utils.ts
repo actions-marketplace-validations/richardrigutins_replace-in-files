@@ -13,6 +13,16 @@ const encodings = [
 export type Encoding = (typeof encodings)[number];
 
 /**
+ * Checks if a given string represents a positive integer.
+ *
+ * @param value - The string to check.
+ * @returns True if the string represents a positive integer, false otherwise.
+ */
+export function isPositiveInteger(value: string): boolean {
+  return /^[1-9]\d*$/.test(value);
+}
+
+/**
  * Checks if the given encoding is supported.
  * @param encoding The encoding to check.
  * @returns `true` if the encoding is valid, `false` otherwise.
@@ -40,6 +50,30 @@ export async function getFiles(
 }
 
 /**
+ * Processes an array in chunks, applying a given function to each item.
+ * @param array The array to process.
+ * @param func The function to apply to each item.
+ * @param chunkSize The number of items to process at a time.
+ * @returns A Promise that resolves when all items have been processed.
+ */
+export async function processInChunks<T>(
+  array: T[],
+  func: (item: T) => Promise<void>,
+  chunkSize: number,
+): Promise<void> {
+  // Split the array into chunks
+  const chunks = Array(Math.ceil(array.length / chunkSize))
+    .fill(0)
+    .map((_, index) => index * chunkSize)
+    .map(begin => array.slice(begin, begin + chunkSize));
+
+  // Process each chunk
+  for (const chunk of chunks) {
+    await Promise.all(chunk.map(func));
+  }
+}
+
+/**
  * Replaces all instances of the given text with the given value in the file.
  * @param filePath The path of the file to modify.
  * @param searchText The string to search for.
@@ -60,7 +94,7 @@ export async function replaceTextInFile(
   }
 
   const fileContent = await readFileContent(filePath, encoding);
-  const updatedContent = fileContent.replace(searchText, replacementText);
+  const updatedContent = fileContent.replaceAll(searchText, replacementText);
   await saveFileContent(filePath, updatedContent);
 }
 
